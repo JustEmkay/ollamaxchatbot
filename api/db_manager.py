@@ -13,6 +13,7 @@ usersData : dict[dict] = {
 }
 }
 
+tokensData = []
 
 def create_Tables() -> dict:
   """ create tables if not found.
@@ -67,6 +68,7 @@ def create_Tables() -> dict:
       uid INTEGER   PRIMARY KEY AUTOINCREMENT,
       assist_id INTEGER    NOT NULL,
       username TEXT   NOT NULL,
+      dob INTEGER NOT NULL, 
       qa TEXT   NOT NULL,
       password BLOB   NOT NULL,
       created_date INTEGER NOT NULL,
@@ -89,5 +91,5 @@ def create_Tables() -> dict:
 
 
 
-if __name__ =='__main__':
-  create_Tables()
+# if __name__ =='__main__':
+#   create_Tables()
