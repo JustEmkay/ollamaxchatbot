@@ -3,10 +3,10 @@ from pydantic import BaseModel
 class registerInfo(BaseModel):
     username : str
     dob : int
-    qa : list[str]
     aname : str
-    persona : str
     model : str
+    persona : str = None
+    qa : list
     password : str
     
 class loginInfo(BaseModel):
