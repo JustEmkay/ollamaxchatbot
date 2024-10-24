@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import jwt,jwt.exceptions,uuid,bcrypt
 from db_manager import *
-from models import *
+from be_models import *
 from creds import *
 from datetime import datetime,timedelta,timezone
 from joi import joi
