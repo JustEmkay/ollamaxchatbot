@@ -12,6 +12,7 @@ from joi import joi
 app = FastAPI()
 
 def hash_pass(userPass:str) -> str:
+    print("trying to hash:",userPass)
     pswd = userPass.encode('utf-8')
     return bcrypt.hashpw(pswd,bcrypt.gensalt())
 
@@ -32,6 +33,28 @@ def validate_token(token:str) -> str:
         return {
             'status' : False,
             'msg' : 'Token Expired'
+        }
+
+def authenticate_token(token:str):
+    try: 
+        unpack_token = jwt.decode(token,SECRET_KEY,algorithm)
+        return {
+            'status' : True,
+            'username' : unpack_token['username'],
+            'uid' : unpack_token['uid']
+        }
+    
+    except jwt.exceptions.DecodeError as e :
+        return {
+            'status' : False,
+            'msg' : e
+            
+        } 
+    except jwt.exceptions.ExpiredSignatureError:
+        return {
+            'status' : False,
+            'msg' : e
+            
         }
 
   
@@ -108,40 +131,27 @@ async def verifyUser(loginInfo : loginInfo):
         'msg' : 'user not found'
     }
     
-@app.post("/register/")
+@app.post("/register")
 async def registerUser(regData:registerInfo):
+    
+    # username='emkay' 
+    # dob=1729708200 
+    # aname='juhi' 
+    # model='gemma2:2b' 
+    # persona='' 
+    # qa=[0, 'doggy'] 
+    # password='Vasu@6969'
+    
     
     userid : str  = uuid.uuid1()
     print(regData)
     
-    return {
-        "uid" : userid,
-        "username" : regData.username,
-        "password" : hash_pass(regData.password)
-    }
-
-def authenticate_token(token:str):
-    try: 
-        unpack_token = jwt.decode(token,SECRET_KEY,algorithm)
-        return {
-            'status' : True,
-            'username' : unpack_token['username'],
-            'uid' : unpack_token['uid']
-        }
+    regData.password = hash_pass(regData.password)
     
-    except jwt.exceptions.DecodeError as e :
-        return {
-            'status' : False,
-            'msg' : e
-            
-        } 
-    except jwt.exceptions.ExpiredSignatureError:
-        return {
-            'status' : False,
-            'msg' : e
-            
-        }
-
+    create_user(regData)
+    
+    
+    return True
 
 @app.post("/chatbot/{token}")
 async def chatbot(token:str, userInput:dict):
