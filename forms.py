@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 import re,time
 from fe_models import fe_RegisterInfo
+from reqs import *
 
 
 model_names : list[str] = ['gemma2:2b','llama3:7b']
@@ -34,13 +35,13 @@ def timestamp_to_date(stamp : int) -> str:
     return tdate
 
 
-# @st.dialog("user Registration",width='large')
+@st.dialog("user Registration",width='large')
 def register_form()->None:
     
     bttn_disable : list = [True,':red-background[fill all inputs]']    
     
     with st.container(border=True):
-        username = st.text_input("Enter your username:")
+        username = st.text_input("Enter your username:",value='emkay')
         uname_alert = st.empty()
         if username:
          if not validate_username(username):
@@ -53,7 +54,7 @@ def register_form()->None:
     
     with st.container(border=True):
         aname_col, model_col = st.columns(2)    
-        aname = aname_col.text_input("Enter your assistant name:")
+        aname = aname_col.text_input("Enter your assistant name:",value='juhi')
         model = model_col.selectbox("Select model:",model_names)
         model_alert = st.empty()
         if aname:
@@ -65,13 +66,13 @@ def register_form()->None:
     with st.container(border=True):
         qes,ans = st.columns([0.7,0.3])
         question : int = questions.index(qes.selectbox("select a question:",questions))
-        answer = ans.text_input("Enter your answer:")
+        answer = ans.text_input("Enter your answer:",value='doggy')
         qa_alert = st.empty()
         qa = [question, answer]
         
         pas,repas = st.columns(2)
-        password = pas.text_input("Create new password:",type='password')
-        re_password = repas.text_input("Re-Enter password:",type='password')
+        password = pas.text_input("Create new password:",type='password',value='Vasu@6969')
+        re_password = repas.text_input("Re-Enter password:",type='password',value='Vasu@6969')
         pass_alert = st.empty()
     
     if password and re_password:
@@ -91,7 +92,8 @@ def register_form()->None:
             reg = fe_RegisterInfo(username=username,dob=dob_timestamp,
                                 aname=aname,model=model,persona=persona,
                                 qa=qa,password=re_password)
-            st.write(reg)
+            registration_req(reg)
+            
         except Exception as e:
             st.error(f"User input Validation error:,{e}",icon='⚡')
                 
