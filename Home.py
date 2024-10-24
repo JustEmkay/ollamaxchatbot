@@ -37,7 +37,8 @@ def main() -> None:
             
             l_blank,signup_bttn,signin_bttn = st.columns([2,1,1])
             if signup_bttn.button('Sign-up',use_container_width=True):
-                ...
+                register_form()
+                
             if signin_bttn.button('Sign-in',use_container_width=True,
                                   type='primary'):
                 if username and password:
@@ -45,7 +46,6 @@ def main() -> None:
                     time.sleep(1)
                     st.rerun()
                     
-        register_form()
  
     elif st.session_state.auth:
         
@@ -64,8 +64,7 @@ def main() -> None:
                 with st.chat_message('ai'):
                     st.markdown(message['response'])
                     
-        
-
+    
         if prompt := st.chat_input('Sing a song..'):
             result = chatbot_req(st.session_state.auth['token'],"user",prompt)
             if result:
