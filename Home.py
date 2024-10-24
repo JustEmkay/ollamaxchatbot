@@ -3,7 +3,7 @@ import time,jwt,jwt.exceptions
 from reqs import login_req,chatbot_req
 from api.creds import SECRET_KEY,algorithm
 import streamlit.components.v1 as components
-
+from forms import register_form
 
 
 if 'auth' not in st.session_state: st.session_state.auth = None
@@ -16,7 +16,12 @@ if 'messages' not in st.session_state: st.session_state.messages = [
             }
 ]
 
-
+st.set_page_config(
+    page_title="Home",
+    page_icon="🏠",
+    layout="centered",
+    initial_sidebar_state="expanded",
+)
 
 def main() -> None:
     
@@ -26,16 +31,21 @@ def main() -> None:
     
     if not st.session_state.auth:
         
-        
-        with st.form('login'):
+        with st.container(border=True):
             username = st.text_input("enter username:",value='emkay')
             password = st.text_input("enter password:",value='123',type='password')
             
-            if st.form_submit_button('signin'):
+            l_blank,signup_bttn,signin_bttn = st.columns([2,1,1])
+            if signup_bttn.button('Sign-up',use_container_width=True):
+                ...
+            if signin_bttn.button('Sign-in',use_container_width=True,
+                                  type='primary'):
                 if username and password:
                     st.session_state.auth = login_req(username,password)
                     time.sleep(1)
                     st.rerun()
+                    
+        register_form()
  
     elif st.session_state.auth:
         
@@ -85,6 +95,7 @@ if __name__ == "__main__":
     
     except Exception as e:
         st.error(e,icon='⚡')
+
         
     finally:
         
