@@ -1,6 +1,7 @@
 
 import streamlit as st 
 import time
+from forms import model_names
 
 def redirect_to_login() -> None:
     
@@ -17,8 +18,6 @@ def redirect_to_login() -> None:
 
 
 def options() -> None:
-    
-    model_names : list[str] = ['gemma2:2b','llama3:7b']
     
     with st.expander('Active Model'):
         with st.form('Select model'):
