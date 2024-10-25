@@ -12,7 +12,6 @@ from joi import joi
 app = FastAPI()
 
 def hash_pass(userPass:str) -> str:
-    print("trying to hash:",userPass)
     pswd = userPass.encode('utf-8')
     return bcrypt.hashpw(pswd,bcrypt.gensalt())
 
@@ -142,16 +141,25 @@ async def registerUser(regData:registerInfo):
     # qa=[0, 'doggy'] 
     # password='Vasu@6969'
     
-    
-    userid : str  = uuid.uuid1()
-    print(regData)
-    
-    regData.password = hash_pass(regData.password)
-    
-    create_user(regData)
-    
-    
-    return True
+    result = check_user(regData.username)
+    if result['status']:
+        
+        if result['exist']:
+            msg = result['msg']
+        else:
+            msg = result['msg']
+        
+        return {
+            'status' : True,
+            'msg' : msg
+        }
+    else:
+        regData.password = hash_pass(regData.password)
+        res = create_user(regData)
+        if res['status']:
+            return res
+        return res
+            
 
 @app.post("/chatbot/{token}")
 async def chatbot(token:str, userInput:dict):

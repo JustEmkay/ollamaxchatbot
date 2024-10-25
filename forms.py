@@ -38,64 +38,74 @@ def timestamp_to_date(stamp : int) -> str:
 @st.dialog("user Registration",width='large')
 def register_form()->None:
     
-    bttn_disable : list = [True,':red-background[fill all inputs]']    
+    placeholder = st.empty()
     
-    with st.container(border=True):
-        username = st.text_input("Enter your username:",value='emkay')
-        uname_alert = st.empty()
-        if username:
-         if not validate_username(username):
-             uname_alert.warning("Not valid username",icon='🤦‍♂️')
+    with placeholder.container():
+    
+        bttn_disable : list = [True,':red-background[fill all inputs]']    
         
-        dob_col, age_col = st.columns([3,1],vertical_alignment='bottom')
-        dob : datetime.date = dob_col.date_input('select you date of birth',min_value=datetime(1940, 1, 1))
-        dob_timestamp=datetime(dob.year,dob.month,dob.day,0,0,0).timestamp()
-        age_col.info(f"Age: {age_calc(dob)}")
-    
-    with st.container(border=True):
-        aname_col, model_col = st.columns(2)    
-        aname = aname_col.text_input("Enter your assistant name:",value='juhi')
-        model = model_col.selectbox("Select model:",model_names)
-        model_alert = st.empty()
-        if aname:
-                if not validate_username(aname):
-                    model_alert.warning("Not valid assistant name",icon='🤦‍♂️')
-        persona = st.text_area("Cretae assistant personality:")
-                    
-                    
-    with st.container(border=True):
-        qes,ans = st.columns([0.7,0.3])
-        question : int = questions.index(qes.selectbox("select a question:",questions))
-        answer = ans.text_input("Enter your answer:",value='doggy')
-        qa_alert = st.empty()
-        qa = [question, answer]
-        
-        pas,repas = st.columns(2)
-        password = pas.text_input("Create new password:",type='password',value='Vasu@6969')
-        re_password = repas.text_input("Re-Enter password:",type='password',value='Vasu@6969')
-        pass_alert = st.empty()
-    
-    if password and re_password:
-        if password != re_password:
-            pass_alert.warning("both password are not equal",icon='⚠')
-        else:
-            if not validate_password(re_password):
-                pass_alert.warning("Not valid password",icon='🤦‍♂️')
-            else:
-                if username and dob and aname and model and qa and password:
-                    bttn_disable = [False,':green-background[Good to go✅]']
-                
-                                
-    if st.button('cerate account',use_container_width=True,type='primary',
-                 disabled=bttn_disable[0],help=bttn_disable[1]):
-        try:
-            reg = fe_RegisterInfo(username=username,dob=dob_timestamp,
-                                aname=aname,model=model,persona=persona,
-                                qa=qa,password=re_password)
-            registration_req(reg)
+        with st.container(border=True):
+            username = st.text_input("Enter your username:",value='emkay')
+            uname_alert = st.empty()
+            if username:
+                if not validate_username(username):
+                    uname_alert.warning("Not valid username",icon='🤦‍♂️')
             
-        except Exception as e:
-            st.error(f"User input Validation error:,{e}",icon='⚡')
+            dob_col, age_col = st.columns([3,1],vertical_alignment='bottom')
+            dob : datetime.date = dob_col.date_input('select you date of birth',min_value=datetime(1940, 1, 1))
+            dob_timestamp=datetime(dob.year,dob.month,dob.day,0,0,0).timestamp()
+            age_col.info(f"Age: {age_calc(dob)}")
+        
+        with st.container(border=True):
+            aname_col, model_col = st.columns(2)    
+            aname = aname_col.text_input("Enter your assistant name:",value='juhi')
+            model = model_col.selectbox("Select model:",model_names)
+            model_alert = st.empty()
+            if aname:
+                    if not validate_username(aname):
+                        model_alert.warning("Not valid assistant name",icon='🤦‍♂️')
+            persona = st.text_area("Cretae assistant personality:")
+                        
+                        
+        with st.container(border=True):
+            qes,ans = st.columns([0.7,0.3])
+            question : int = questions.index(qes.selectbox("select a question:",questions))
+            answer = ans.text_input("Enter your answer:",value='doggy')
+            qa_alert = st.empty()
+            qa = [question, answer]
+            
+            pas,repas = st.columns(2)
+            password = pas.text_input("Create new password:",type='password',value='Vasu@6969')
+            re_password = repas.text_input("Re-Enter password:",type='password',value='Vasu@6969')
+            pass_alert = st.empty()
+        
+        if password and re_password:
+            if password != re_password:
+                pass_alert.warning("both password are not equal",icon='⚠')
+            else:
+                if not validate_password(re_password):
+                    pass_alert.warning("Not valid password",icon='🤦‍♂️')
+                else:
+                    if username and dob and aname and model and qa and password:
+                        bttn_disable = [False,':green-background[Good to go✅]']
+                    
+                                    
+        if st.button('cerate account',use_container_width=True,type='primary',
+                    disabled=bttn_disable[0],help=bttn_disable[1]):
+            try:
+                reg = fe_RegisterInfo(username=username,dob=dob_timestamp,
+                                    aname=aname,model=model,persona=persona,
+                                    qa=qa,password=re_password)
+                result = registration_req(reg)
+                if result['status']:
+                    placeholder.success(result['msg'])
+                else:
+                    st.error(result['msg'])
+                
+                
+                
+            except Exception as e:
+                st.error(f"User input Validation error:,{e}",icon='⚡')
                 
     
     

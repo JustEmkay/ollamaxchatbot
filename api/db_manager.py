@@ -124,9 +124,42 @@ def create_user(regData : registerInfo) -> dict:
       'msg' : 'error creating users.'
     }
 
+def check_user(username:str) -> True:
+  
+  try:
+    
+    cursor.execute('SELECT 1 FROM users WHERE username = ?',(username,))
+    result = cursor.fetchone()
+    print('result',result)
+    
+    if result:
+      return {
+        'status' : True,
+        'exist' : True,
+        'msg' : 'user exist'
+      }
+    return {
+        'status' : True,
+        'exist' : False,
+        'msg' : 'user not exist'
+      }
+    
+    
+  except Exception as e:
+    print('Error in check_user:',e)
+    return {
+        'status' : False,
+        'msg' : f'Exception raise: {e}'
+      }
+    
+  
+  
+
+
 
 # if __name__ =='__main__':
-  # create_Tables()
+#   # create_Tables()
+#   check_user('emkay')
   # data = {"username":'emkay',
   #              "dob":1729708200,
   #              "aname":'juhi',
