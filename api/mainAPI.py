@@ -17,7 +17,7 @@ def hash_pass(userPass:str) -> str:
 
 def verify_pass(userPass:str, hashedPass:str) -> bool:
     pswd = userPass.encode('utf-8')
-    return bcrypt.checkpw(pswd,hashedPass.encode('utf-8'))
+    return bcrypt.checkpw(pswd,hashedPass)
 
 def validate_token(token:str) -> str:
     
@@ -66,8 +66,50 @@ def connection():
         "userData" : usersData,
         "tokensData" : tokensData
     }
+
     
 @app.get("/login/{username}/{password}")
+def validateUser(username:str, password:str):
+    
+    check = check_user(username)
+    if check['status']:
+        if check['exist']:
+            og_pass = get_userPass(username)
+            
+            if verify_pass(password,og_pass):
+                
+                uad_response = get_userAccessData(username)
+                if uad_response['status']:
+                
+                    payload_data = {
+                        'username' : uad_response['data']['username'],
+                        'uid' : uad_response['data']['uid'],
+                        'assist_id' : uad_response['data']['assist_id'],
+                        'iat':datetime.now(timezone.utc),
+                        'exp' : datetime.now(timezone.utc) + timedelta(hours=1)
+                    }
+                    
+                    token = jwt.encode(
+                        payload=payload_data,
+                        key= SECRET_KEY
+                    )
+                    
+                    return {
+                            'status': True,
+                            'msg' : 'user found',
+                            'token' : token
+                    }
+                return uad_response  
+                            
+        else:
+            return {
+                'status': False,
+                'msg' : check['msg']
+            }
+            
+
+ 
+@app.get("/loginn/{username}/{password}")
 def validateUser(username:str, password:str):
     
     if username in usersData:
