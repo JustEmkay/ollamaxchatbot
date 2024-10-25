@@ -1,5 +1,5 @@
 import sqlite3,uuid
-from be_models import registerInfo
+from be_models import registerInfo,loginInfo
 from datetime import datetime
 
 conn = sqlite3.connect("../database/data.db",check_same_thread=False)
@@ -124,7 +124,7 @@ def create_user(regData : registerInfo) -> dict:
       'msg' : 'error creating users.'
     }
 
-def check_user(username:str) -> True:
+def check_user(username:str) -> dict:
   
   try:
     
@@ -152,14 +152,50 @@ def check_user(username:str) -> True:
         'msg' : f'Exception raise: {e}'
       }
     
+def get_userPass(username:str) -> dict:
+  cursor.execute("SELECT password FROM users WHERE username=?",(username,))
+  result = cursor.fetchone()
+  if result:
+    return result[0]
+  
+def get_userAccessData(username:str) -> dict:
+  try:
+    cursor.execute( "SELECT uid,assist_id FROM users WHERE username=?",
+                  (username,))
+    result = cursor.fetchone()  
+    if result:
+      return {
+        'status':True,
+        'data':{
+        'username': username,
+        'uid' : result[0],
+        'assist_id' : result[1]
+        }
+      }
+  except Exception as e:
+    print("Exception in userAccessData:",e)
+    return {
+      'status':False,
+      'msg' : 'Error accessing data.'
+    }
   
   
-
-
-
+  
+  
+  
+  
 # if __name__ =='__main__':
-#   # create_Tables()
-#   check_user('emkay')
+  
+#   data = {
+#     'username': 'emkay',
+#     'password' : 'Vasu@6969'
+#   }
+  
+#   get_userData()
+  
+  #create_Tables()
+  
+  #check_user('emkay')
   # data = {"username":'emkay',
   #              "dob":1729708200,
   #              "aname":'juhi',
@@ -167,9 +203,7 @@ def check_user(username:str) -> True:
   #              "persona":'',
   #              "qa":[0, 'doggy'],
   #              "password":'Vasu@6969'}
-  
   # reg = registerInfo(**data)
-  
   # create_user(reg)
 
 # DB.uid : c638861c-9221-11ef-8781-d0c5d3da8dc4
