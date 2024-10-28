@@ -5,7 +5,14 @@ from fe_models import fe_RegisterInfo
 from reqs import *
 
 
-model_names : list[str] = ['gemma2:2b','llama3:7b']
+today_timestamp : int = int(datetime.now().timestamp())
+
+
+def default_font() -> None:
+    with open( "style.css" ) as css:
+            st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
+        
+model_names : list[str] = [None,'gemma2:2b','llama3:7b']
 
 questions : list[str] = (
     "What is the name of your first pet?",
@@ -34,7 +41,6 @@ def timestamp_to_date(stamp : int) -> str:
     tdate = datetime.fromtimestamp(stamp).strftime("%B %d, %Y")
     return tdate
 
-
 @st.dialog("user Registration",width='large')
 def register_form()->None:
     
@@ -59,7 +65,7 @@ def register_form()->None:
         with st.container(border=True):
             aname_col, model_col = st.columns(2)    
             aname = aname_col.text_input("Enter your assistant name:",value='juhi')
-            model = model_col.selectbox("Select model:",model_names)
+            model = model_col.selectbox("Select model:",st.session_state.models)
             model_alert = st.empty()
             if aname:
                     if not validate_username(aname):
@@ -102,8 +108,7 @@ def register_form()->None:
                 else:
                     st.error(result['msg'])
                 
-                
-                
+            
             except Exception as e:
                 st.error(f"User input Validation error:,{e}",icon='⚡')
                 

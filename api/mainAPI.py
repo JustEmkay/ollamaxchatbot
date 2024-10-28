@@ -1,10 +1,10 @@
 from fastapi import FastAPI
-import jwt,jwt.exceptions,uuid,bcrypt
+import jwt,jwt.exceptions,bcrypt
 from db_manager import *
 from be_models import *
 from creds import *
 from datetime import datetime,timedelta,timezone
-from joi import joi
+from chatbot import *
 
 
 
@@ -40,7 +40,8 @@ def authenticate_token(token:str):
         return {
             'status' : True,
             'username' : unpack_token['username'],
-            'uid' : unpack_token['uid']
+            'uid' : unpack_token['uid'],
+            'assist_id' : unpack_token['assist_id']
         }
     
     except jwt.exceptions.DecodeError as e :
@@ -60,19 +61,38 @@ def authenticate_token(token:str):
 @app.get("/")
 def connection():
     
+    result = model_status()
+    if result['status']:
+        models : list = result['models']
+    else:
+        models : list = []
+    
     return {
         "author" : 'emkay',
-        "connection" : True,
-        "userData" : usersData,
-        "tokensData" : tokensData
+        "models" : models
+        
     }
-
     
+@app.get("/model/status")
+def model_status():
+       
+    result = llm_status()
+    if result['status']:
+        return {
+            'status' : True,
+            'models' : result['models']
+        }
+    return {
+            'status' : False,
+            'msg' : result['msg']
+        } 
+        
 @app.get("/login/{username}/{password}")
 def validateUser(username:str, password:str):
     
     check = check_user(username)
     if check['status']:
+        
         if check['exist']:
             og_pass = get_userPass(username)
             
@@ -97,7 +117,7 @@ def validateUser(username:str, password:str):
                     return {
                             'status': True,
                             'msg' : 'user found',
-                            'token' : token
+                            'token' : token,
                     }
                 return uad_response  
                             
@@ -106,72 +126,11 @@ def validateUser(username:str, password:str):
                 'status': False,
                 'msg' : check['msg']
             }
-            
-
- 
-@app.get("/loginn/{username}/{password}")
-def validateUser(username:str, password:str):
-    
-    if username in usersData:
-        
-        hashedPass = usersData[username]['password']
-        if verify_pass(password,hashedPass):
-            
-            
-            payload_data = {
-                'username' : username,
-                'uid' : usersData[username]['uid'],
-                'iat':datetime.now(timezone.utc),
-                'exp' : datetime.now(timezone.utc) + timedelta(hours=1)
-            }
-            
-            token = jwt.encode(
-                payload=payload_data,
-                key= SECRET_KEY
-            )
-            
-            tokensData.append(token)
-                    
-            return {
-                'status': True,
-                'msg' : 'user found',
-                'token' : token
-            }
-            
-        return {
-            'status': False,
-            'msg' : 'Wrong password'
-        }
-            
     return {
         'status': False,
-        'msg' : 'user not found'
+        'msg' : 'Wrong credential. Try again with correct one.'
     }
-
-@app.post("/verify/")
-async def verifyUser(loginInfo : loginInfo):
-    
-    if loginInfo.username in usersData:
-        
-        hashedPass = usersData[loginInfo.username]['password']
-        if verify_pass(loginInfo.password,hashedPass):
-                    
-            return {
-                'status': True,
-                'msg' : 'user found',
-                'uid' : usersData[loginInfo.username]['uid']
-            }
             
-        return {
-            'status': False,
-            'msg' : 'Wrong password'
-        }
-            
-    return {
-        'status': False,
-        'msg' : 'user not found'
-    }
-    
 @app.post("/register")
 async def registerUser(regData:registerInfo):
     
@@ -184,36 +143,94 @@ async def registerUser(regData:registerInfo):
     # password='Vasu@6969'
     
     result = check_user(regData.username)
+    print("result:",result )
+    
     if result['status']:
         
         if result['exist']:
             msg = result['msg']
         else:
             msg = result['msg']
+            print("User not in db , creating new user")
+            regData.password = hash_pass(regData.password)
+            res = create_user(regData)
+            if res['status']:
+                return res
+            return res
         
         return {
             'status' : True,
             'msg' : msg
         }
-    else:
-        regData.password = hash_pass(regData.password)
-        res = create_user(regData)
-        if res['status']:
-            return res
-        return res
             
-
 @app.post("/chatbot/{token}")
-async def chatbot(token:str, userInput:dict):
-    print("useInput:",userInput)
+async def chatbot_req(token:str, userInput:dict):
     
     result = authenticate_token(token)
     if result['status']:
-        response = joi(userInput['role'],userInput['prompt'])
+        
+        assist_data = get_userAssist_data(result['assist_id'])
+        
+        response = chatbot(assist_data['model'],assist_data['persona'],
+                           userInput['role'],userInput['prompt'])
+        
         if response['status']:
-            return response
+            
+            user = [result['assist_id'],userInput['role'],userInput['prompt']]
+            ai = [result['assist_id'],"ai",response['response']]
+
+            history = save_menmory(result['assist_id'],user,ai)
+            if history:
+                return {
+                    
+                    'status' : True,
+                    'memories' : history
+                    }
         else:
-            return response
+            return {
+                'status' : False,
+                'msg': "Error occured."
+            }
     
     return result
         
+@app.get("/chats/{assist_id}")
+async def getChats(assist_id:str):
+
+    chats = get_Chats(assist_id)
+    
+    if chats:
+        return {
+            'status' : True,
+            'chats' : chats
+        }
+    return {
+            'status' : False,
+            'msg' : 'Failed to fetch chats.'
+    }
+        
+        
+        
+# @app.post("/verify/")
+# async def verifyUser(loginInfo : loginInfo):
+    
+#     if loginInfo.username in usersData:
+        
+#         hashedPass = usersData[loginInfo.username]['password']
+#         if verify_pass(loginInfo.password,hashedPass):
+                    
+#             return {
+#                 'status': True,
+#                 'msg' : 'user found',
+#                 'uid' : usersData[loginInfo.username]['uid']
+#             }
+            
+#         return {
+#             'status': False,
+#             'msg' : 'Wrong password'
+#         }
+            
+#     return {
+#         'status': False,
+#         'msg' : 'user not found'
+#     }

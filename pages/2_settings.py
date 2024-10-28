@@ -1,7 +1,10 @@
 
 import streamlit as st 
 import time
-from forms import model_names
+from forms import default_font,model_names
+
+default_font()
+
 
 def redirect_to_login() -> None:
     
@@ -21,8 +24,8 @@ def options() -> None:
     
     with st.expander('Active Model'):
         with st.form('Select model'):
-            st.selectbox('Model list',model_names,
-                         index=model_names.index(st.session_state.model))
+            st.selectbox('Model list',st.session_state.models,
+                         index=model_names.index(st.session_state.settingsData['model']))
             if st.form_submit_button("update model."):
                 ...
 
@@ -30,7 +33,7 @@ def options() -> None:
         with st.form("persona"):
             persona = st.text_area("Assistant's persona:",
                                 placeholder="Enter how you want your assistant to act..",
-                                value=st.session_state.persona)
+                                value=st.session_state.settingsData['persona'])
             if st.form_submit_button("update personatity."):
                 ...
         

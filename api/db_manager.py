@@ -1,6 +1,7 @@
-import sqlite3,uuid
+import sqlite3,uuid,json
 from be_models import registerInfo,loginInfo
 from datetime import datetime
+
 
 conn = sqlite3.connect("../database/data.db",check_same_thread=False)
 conn.isolation_level = None
@@ -8,14 +9,7 @@ cursor = conn.cursor()
 
 created_date = int(datetime.now().timestamp())
 
-usersData : dict[dict] = {
-    "emkay" : {
-  "uid": "33acf232-8ed2-11ef-a7b2-d0c5d3da8dc4",
-  "password": "$2b$12$s8evFN28hru7KGWvjiG4Xef8FCQ1ab4v.y2M61v/To/l16bGWsRky"
-}
-}
 
-tokensData = []
 
 def create_Tables() -> dict:
   """ create tables if not found.
@@ -51,9 +45,11 @@ def create_Tables() -> dict:
     cursor.execute(  """CREATE TABLE IF NOT EXISTS memories(
       memory_id INTEGER   PRIMARY KEY AUTOINCREMENT,
       assist_id TEXT NOT NULL,
-      fragment TEXT,
+      role TEXT  NOT NULL,
+      chat TEXT  NOT NULL,
+      created_date INTEGER  NOT NULL,
       FOREIGN KEY (assist_id)
-                      REFERENCES assistant (assist_id)
+                      REFERENCES assistants (assist_id)
     )"""  )
     
   except sqlite3.Error as er:
@@ -98,7 +94,6 @@ def create_user(regData : registerInfo) -> dict:
   uid : str = str(uuid.uuid1())
   assist_id : str = str(uuid.uuid3(uuid.NAMESPACE_DNS, regData.username))
 
-  
   try :
     cursor.execute( " INSERT INTO assistants(assist_id,aname,persona,model) \
                   VALUES(?,?,?,?)",(assist_id,regData.aname,regData.persona,
@@ -107,9 +102,6 @@ def create_user(regData : registerInfo) -> dict:
     cursor.execute( " INSERT INTO users(uid,assist_id,username,dob,question,answer,password,created_date) \
                   VALUES(?,?,?,?,?,?,?,?)",(uid,assist_id,regData.username,regData.dob,regData.qa[0],
                                     regData.qa[1],regData.password,created_date,) )
-    
-    cursor.execute( " INSERT INTO memories(assist_id) \
-                  VALUES(?)",(assist_id,) )
 
     return {
       'status' : True,
@@ -130,8 +122,7 @@ def check_user(username:str) -> dict:
     
     cursor.execute('SELECT 1 FROM users WHERE username = ?',(username,))
     result = cursor.fetchone()
-    print('result',result)
-    
+
     if result:
       return {
         'status' : True,
@@ -179,6 +170,51 @@ def get_userAccessData(username:str) -> dict:
       'msg' : 'Error accessing data.'
     }
   
+def get_userAssist_data(assist_id:str) -> dict:
+  
+  cursor.execute(" SELECT persona,model FROM assistants WHERE assist_id = ? ",(assist_id,))
+  result = cursor.fetchone()  
+  
+  return {
+    'model' : result[1],
+    'persona' : result[0]
+  }
+  
+def save_menmory(assist_id,user:list,ai:list) -> dict:
+  
+  user.append(created_date)
+  ai.append(created_date)
+  
+  fragments : list = [tuple(user),tuple(ai)]
+  
+  cursor.executemany( " INSERT INTO memories(assist_id,role,chat,created_date) \
+                     VALUES(?,?,?,?) ", fragments)
+  
+  chats = get_Chats(assist_id)
+  
+  return chats
+
+def get_Chats(assist_id:str) -> dict:
+  
+  cursor.execute(" SELECT memory_id,role,chat,created_date FROM memories \
+                 WHERE assist_id = ? ORDER BY memory_id DESC LIMIT 10",
+                 (assist_id,))
+  
+  result = cursor.fetchall()
+  
+  chats : list[dict] = []
+  
+  for chat in result:
+    temp = {
+      'memory_id' : chat[0],
+      "role" : chat[1],
+      "chat" : chat[2],
+      "created_date" : chat[3]
+    }
+    chats.append(temp)
+    
+  return list(reversed(chats))
+  
   
   
   
@@ -193,7 +229,7 @@ def get_userAccessData(username:str) -> dict:
   
 #   get_userData()
   
-  #create_Tables()
+  # create_Tables()
   
   #check_user('emkay')
   # data = {"username":'emkay',
