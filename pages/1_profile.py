@@ -1,6 +1,13 @@
 
 import streamlit as st 
 import time
-from forms import default_font,model_names
 
-default_font()
+
+
+def profile() -> None:
+    st.header("User Profile",divider='blue',anchor=False)
+    
+    
+if __name__ == "__main__":
+    profile()
+
