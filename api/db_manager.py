@@ -194,7 +194,7 @@ def save_menmory(assist_id,user:list,ai:list) -> dict:
   
   return chats
 
-def get_Chats(assist_id:str) -> dict:
+def get_Chats(assist_id:str) -> list:
   
   cursor.execute(" SELECT memory_id,role,chat,created_date FROM memories \
                  WHERE assist_id = ? ORDER BY memory_id DESC LIMIT 10",
@@ -215,8 +215,34 @@ def get_Chats(assist_id:str) -> dict:
     
   return list(reversed(chats))
   
+def get_Settings(assist_id:str) -> dict:
+  
+  cursor.execute(" SELECT aname,model,persona FROM assistants WHERE assist_id = ?",
+                  (assist_id,))
+  result = cursor.fetchone()
+  print("DB-result:",result)
+  
+  return {
+    'aname' : result[0],
+    'model' : result[1],
+    'persona' : result[2]
+  }
+  
+def get_userProfile(uid:str) -> dict:
+  
+  cursor.execute( "SELECT username,dob,created_date FROM users WHERE uid=?",
+                 (uid,))
+  result = cursor.fetchone()
+  print("result:",result)
+  return {
+    'username':result[0],
+    'dob' : result[1],
+    'created_date' : result[2] 
+  }
+
   
   
+   
   
   
   

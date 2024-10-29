@@ -102,7 +102,6 @@ def validateUser(username:str, password:str):
                 if uad_response['status']:
                 
                     payload_data = {
-                        'username' : uad_response['data']['username'],
                         'uid' : uad_response['data']['uid'],
                         'assist_id' : uad_response['data']['assist_id'],
                         'iat':datetime.now(timezone.utc),
@@ -209,7 +208,26 @@ async def getChats(assist_id:str):
             'msg' : 'Failed to fetch chats.'
     }
         
-        
+@app.get("/settings/{assist_id}")
+async def getSettings(assist_id:str):
+    
+    data = get_Settings(assist_id)
+    
+    return {
+        'status' : True,
+        'data' : data
+    }
+    
+@app.get("/profile/{uid}")
+async def getProfile(uid:str):
+    result = get_userProfile(uid)
+    if result:
+        return {
+            'status' : True,
+            'data' : result
+        }
+    
+             
         
 # @app.post("/verify/")
 # async def verifyUser(loginInfo : loginInfo):

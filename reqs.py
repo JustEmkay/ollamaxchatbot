@@ -34,3 +34,15 @@ def getChat(assist_id:str) -> dict:
     res = req.status_code
     if res == 200:
         return req.json() 
+    
+def getProfileData(uid:str) -> dict:
+    req = requests.get(API_URL + f'profile/{uid}')
+    res = req.status_code
+    if res == 200:
+        return req.json() 
+    
+def getSettingsData(assist_id:str) -> dict:
+    req = requests.get(API_URL + f'settings/{assist_id}')
+    res = req.status_code
+    if res == 200:
+        return req.json() 

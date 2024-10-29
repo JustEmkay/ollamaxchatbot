@@ -1,6 +1,6 @@
 import streamlit as st 
 import time,jwt,jwt.exceptions,requests
-from reqs import login_req,chatbot_req,gatherStartupData,getChat
+from reqs import login_req,chatbot_req,gatherStartupData,getChat,getSettingsData,getProfileData
 from api.creds import SECRET_KEY,algorithm
 import streamlit.components.v1 as components
 from forms import register_form,default_font,today_timestamp
@@ -11,7 +11,6 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
 )
-
 
 
 if 'auth' not in st.session_state: st.session_state.auth = None
@@ -31,12 +30,16 @@ if 'chatbotData' not in st.session_state:
 
 if 'profileData' not in st.session_state: 
     st.session_state.profileData = {
+        'getProfile' : False,
         'username' : None,
         'dob' : None,
+        'created_date' : None
     }
 
 if 'settingsData' not in st.session_state:
     st.session_state.settingsData = {
+        'getSettingsData' : False,
+        'aname': None,
         'model' : None,
         'persona' : None
     }
@@ -85,20 +88,38 @@ def main() -> None:
             if chats['status']:
                 st.session_state.chatbotData['messages'] = chats['chats']
             st.session_state.chatbotData['getChat'] = True
+        
+        if not st.session_state.profileData['getProfile']:
+            profile = getProfileData(unpack_token['uid'])
+            if profile['status']:
+                st.session_state.profileData.update({
+                    
+                        'getProfile' : True,
+                        'username' : profile['data']['username'],
+                        'dob' : profile['data']['dob'],
+                        'created_date' : profile['data']['created_date']
+                })
+              
+        if not st.session_state.settingsData['getSettingsData']:
+            settings = getSettingsData(unpack_token['assist_id'])
+            if settings['status']:
+                st.session_state.settingsData.update({
+                    'getSettingsData' : True,
+                    'aname' : settings['data']['aname'],
+                    'model' : settings['data']['model'],
+                    'persona' : settings['data']['persona']
+                })
                 
                 
-        
-        
         for message in st.session_state.chatbotData['messages']:
-            
-            
+        
                 if message['role'] == 'user':
                     with st.chat_message('user'):
-                        st.write(f"{unpack_token['username']}: {message['chat']}")
+                        st.write(f"**{st.session_state.profileData['username']} :** {message['chat']}")
                 if message['role'] == 'ai':
                     with st.container(border=True):
                         with st.chat_message('ai'):
-                            st.markdown(f"Assistant: {message['chat']}")
+                            st.markdown(f"**{st.session_state.settingsData['aname']} :** {message['chat']}")
                             blnk, bttn_col = st.columns([3,1])
                             bttn_col.button('delete',
                                             key=message['memory_id'],
