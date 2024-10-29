@@ -1,8 +1,6 @@
 import streamlit as st 
 import time
-from forms import default_font
 
-default_font()
 
 def redirect_to_login() -> None:
     
