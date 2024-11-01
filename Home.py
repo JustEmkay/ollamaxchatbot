@@ -1,9 +1,9 @@
 import streamlit as st 
 import time,jwt,jwt.exceptions,requests
 from reqs import login_req,chatbot_req,gatherStartupData,getChat,getSettingsData,getProfileData
-from api.creds import SECRET_KEY,algorithm
 import streamlit.components.v1 as components
-from forms import register_form,default_font,today_timestamp
+from forms import register_form,today_timestamp
+from api.creds import SECRET_KEY,algorithm
 
 st.set_page_config(
     page_title="Home",
@@ -13,7 +13,11 @@ st.set_page_config(
 )
 
 
-if 'auth' not in st.session_state: st.session_state.auth = None
+if 'auth' not in st.session_state: 
+    st.session_state.auth = {
+        'token':None,
+        'unpackedToken' : False
+    }
 
 if 'chatbotData' not in st.session_state: 
     st.session_state.chatbotData = {
@@ -52,7 +56,8 @@ def main() -> None:
               help='chat bot powered by ollama 🦙',
               )
     
-    if not st.session_state.auth:
+    if not st.session_state.auth['token']:
+        
                 
         with st.container(border=True):
             username = st.text_input("enter username:",value='emkay')
@@ -68,7 +73,7 @@ def main() -> None:
                     result = login_req(username,password)
                     if result:
                         if result['status']:
-                            st.session_state.auth = result        
+                            st.session_state.auth.update(result)        
                             st.success(result['msg'],icon='✅')
                             time.sleep(2)
                             st.rerun()
@@ -78,19 +83,25 @@ def main() -> None:
                             
     elif st.session_state.auth:
         
+        if not st.session_state.auth['unpackedToken']: 
+            unpack_token = jwt.decode(st.session_state.auth['token'],SECRET_KEY,algorithm)
+            st.session_state.auth.update(unpack_token) 
+    
+
+        
         with st.sidebar:
             st.success('login successful',icon='✅')
     
-        unpack_token = jwt.decode(st.session_state.auth['token'],SECRET_KEY,algorithm)
+        
         
         if not st.session_state.chatbotData['getChat']:
-            chats = getChat(unpack_token['assist_id'])
+            chats = getChat(st.session_state.auth['assist_id'])
             if chats['status']:
                 st.session_state.chatbotData['messages'] = chats['chats']
             st.session_state.chatbotData['getChat'] = True
         
         if not st.session_state.profileData['getProfile']:
-            profile = getProfileData(unpack_token['uid'])
+            profile = getProfileData(st.session_state.auth['uid'])
             if profile['status']:
                 st.session_state.profileData.update({
                     
@@ -101,7 +112,7 @@ def main() -> None:
                 })
               
         if not st.session_state.settingsData['getSettingsData']:
-            settings = getSettingsData(unpack_token['assist_id'])
+            settings = getSettingsData(st.session_state.auth['assist_id'])
             if settings['status']:
                 st.session_state.settingsData.update({
                     'getSettingsData' : True,
@@ -139,6 +150,8 @@ if __name__ == "__main__":
         if 'models' not in st.session_state:
                 models = gatherStartupData()
                 st.session_state.models = models['models']
+                st.session_state.models = ["gemma2:2b"]
+                
     
         main()
     
