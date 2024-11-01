@@ -46,3 +46,16 @@ def getSettingsData(assist_id:str) -> dict:
     res = req.status_code
     if res == 200:
         return req.json() 
+    
+def updateProfileUsername(uid:str, username:str) -> dict:    
+    req = requests.put(API_URL + f"profile/update/{uid}?username={username}")
+    res = req.status_code
+    if res == 200:
+        return req.json() 
+    
+def updateProfileDOB(uid:str, dob:str) -> dict:    
+    req = requests.put(API_URL + f'profile/update/{uid}?dob={dob}')
+    res = req.status_code
+    if res == 200:
+        return req.json() 
+    

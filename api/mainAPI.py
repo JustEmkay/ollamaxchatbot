@@ -39,7 +39,6 @@ def authenticate_token(token:str):
         unpack_token = jwt.decode(token,SECRET_KEY,algorithm)
         return {
             'status' : True,
-            'username' : unpack_token['username'],
             'uid' : unpack_token['uid'],
             'assist_id' : unpack_token['assist_id']
         }
@@ -227,7 +226,25 @@ async def getProfile(uid:str):
             'data' : result
         }
     
-             
+@app.put("/profile/update/{uid}")       
+async def updateProfile(uid:str, username:str = None, dob:int = None):
+    
+    if username:
+        result = check_user(username)
+        print(result)
+        if result['status'] and result['exist']:
+             return {
+                 'status':False,
+                 'msg':'Cannont use that username'
+             }
+        
+    
+    update = update_userProfile(uid,username=username,dob=dob)
+    if update['status']:
+        return {
+            'status' : True,
+            'msg' : update['msg']
+        }
         
 # @app.post("/verify/")
 # async def verifyUser(loginInfo : loginInfo):

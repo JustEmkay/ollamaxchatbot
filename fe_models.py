@@ -13,3 +13,4 @@ class fe_RegisterInfo(BaseModel):
 class fe_logiInfo(BaseModel):
     username : str
     password : str
+    

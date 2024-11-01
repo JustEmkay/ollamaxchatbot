@@ -240,9 +240,34 @@ def get_userProfile(uid:str) -> dict:
     'created_date' : result[2] 
   }
 
+def update_userProfile(uid:str, **updateCols):
+  print(updateCols)
+  update = ''
+  colName : list = [ _ for _ in updateCols if updateCols[_] ]
+
+
+  for indx,x in enumerate(colName,start=1):
+      update = update + f'{x} = "{updateCols[x]}"'
+      if len(colName) > 1 and indx != len(colName):
+          update = update + ','
+      
+  print("update:",update)
+      
+        
+  try:        
+    cursor.execute(f'UPDATE users SET {update} WHERE uid=?',(uid,))
+    return {
+      'status' : True,
+      'msg': 'Updation successful.'
+    }
+
   
-  
-   
+  except Exception as e:
+    print("error at update_userProfile:",e)
+    return {
+      'status' : False,
+      'msg': 'Error updating users profile.'
+    }
   
   
   

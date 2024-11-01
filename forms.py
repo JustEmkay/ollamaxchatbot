@@ -1,13 +1,19 @@
 import streamlit as st 
 from datetime import datetime
-import re,time
+import re,time,jwt
 from fe_models import fe_RegisterInfo
 from reqs import *
 
+# if 'auth' not in st.session_state: st.session_state.auth = None
+
+# unpack_token = jwt.decode(st.session_state.auth['token'],SECRET_KEY,algorithm)
 
 today_timestamp : int = int(datetime.now().timestamp())
 
-
+def timestamp_to_datetimedate(timestamp:int) -> datetime.date:
+    
+    return datetime.fromtimestamp(timestamp).date()
+    
 def default_font() -> None:
     with open( "style.css" ) as css:
             st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
@@ -111,6 +117,47 @@ def register_form()->None:
             
             except Exception as e:
                 st.error(f"User input Validation error:,{e}",icon='⚡')
-                
+
+@st.dialog("update user profile")               
+def edit_profile() -> None:
     
+    input_col, bttn_col = st.columns([0.8,0.2],vertical_alignment='top')
     
+    new_username : str = input_col.text_input("Enter username",
+                                              label_visibility='collapsed',
+                    placeholder=f'Enter new username here')
+    
+    age_ip, dob_ip = input_col.columns([0.2,0.8],vertical_alignment='center')
+    
+    new_dob : datetime.date = dob_ip.date_input("update your date of birth",
+                            value=timestamp_to_datetimedate(st.session_state.profileData['dob']),
+                            label_visibility='collapsed',
+                            min_value=datetime(1940, 1, 1))
+    age_ip.write(f"Age: {age_calc(new_dob)}")
+    
+    alert = st.empty()
+    
+    if new_username:
+        if validate_username(new_username):
+            alert.info(f"{st.session_state.profileData['username']} >> {new_username}")
+        else:
+            alert.warning("invalide username.")
+    
+    if new_dob != timestamp_to_datetimedate(st.session_state.profileData['dob']):
+        alert.info(f"{timestamp_to_datetimedate(st.session_state.profileData['dob'])} \
+                   >> {new_dob}")
+    
+    if bttn_col.button("update",key='update_uname'):
+        if validate_username(new_username):
+            res1 = updateProfileUsername(st.session_state.auth['uid'],
+                                  new_username)
+            if res1['status']:
+                st.session_state.profileData['username'] = new_username
+                st.rerun()
+        
+    if bttn_col.button("update",key="update_age"):
+        dob_timestamp=datetime(new_dob.year,new_dob.month,new_dob.day,0,0,0).timestamp()
+        res2 = updateProfileDOB(st.session_state.auth['uid'],dob_timestamp)
+        if res2['status']:
+            st.session_state.profileData['dob'] = dob_timestamp
+            st.rerun()
