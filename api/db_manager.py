@@ -1,4 +1,4 @@
-import sqlite3,uuid,json
+import sqlite3,uuid
 from be_models import registerInfo,loginInfo
 from datetime import datetime
 
@@ -8,7 +8,6 @@ conn.isolation_level = None
 cursor = conn.cursor()
 
 created_date = int(datetime.now().timestamp())
-
 
 
 def create_Tables() -> dict:
@@ -144,7 +143,7 @@ def check_user(username:str) -> dict:
       }
     
 def get_userPass(username:str) -> dict:
-  cursor.execute("SELECT password FROM users WHERE username=?",(username,))
+  cursor.execute("SELECT password FROM users WHERE username=? or uid = ?",(username,username,))
   result = cursor.fetchone()
   if result:
     return result[0]
@@ -240,8 +239,8 @@ def get_userProfile(uid:str) -> dict:
     'created_date' : result[2] 
   }
 
-def update_userProfile(uid:str, **updateCols):
-  print(updateCols)
+def update_userProfile(uid:str, **updateCols) -> dict:
+
   update = ''
   colName : list = [ _ for _ in updateCols if updateCols[_] ]
 
@@ -250,10 +249,7 @@ def update_userProfile(uid:str, **updateCols):
       update = update + f'{x} = "{updateCols[x]}"'
       if len(colName) > 1 and indx != len(colName):
           update = update + ','
-      
-  print("update:",update)
-      
-        
+   
   try:        
     cursor.execute(f'UPDATE users SET {update} WHERE uid=?',(uid,))
     return {
@@ -269,8 +265,74 @@ def update_userProfile(uid:str, **updateCols):
       'msg': 'Error updating users profile.'
     }
   
+def update_assistant(assist_id:str, **updateCols) -> dict:
+
+  update = ''
+  colName : list = [ _ for _ in updateCols if updateCols[_] ]
   
+  for indx,x in enumerate(colName,start=1):
+      update = update + f'{x} = "{updateCols[x]}"'
+      if len(colName) > 1 and indx != len(colName):
+          update = update + ','
+  print(update)
   
+  try:
+    cursor.execute( f" UPDATE assistants SET {update} WHERE assist_id = ?",(assist_id,) )  
+    return {
+      'status' : True,
+      'msg' : 'Updated successfully.'
+    }
+    
+    
+  except Exception as e:
+    print("Error at update_assistant:",e)
+    return {
+      'status' : False,
+      'msg' : 'Updation failed.'
+    }
+
+def get_qa(uid:str) -> list:
+  
+  """
+  Get Question or answer
+  """
+
+  cursor.execute("SELECT question,answer FROM users WHERE uid = ? ",(uid,))
+  result = cursor.fetchone()
+  
+  return result
+  
+def delete_assistChat(assist_id:str, user_chat_id:int, memory_id:int) -> bool:
+  
+  delete_data : list = [(assist_id,user_chat_id),(assist_id,memory_id)]
+    
+  try: 
+    
+    cursor.executemany(" DELETE FROM memories WHERE assist_id = ? AND memory_id = ? ",delete_data)
+  
+    return True
+  
+  except Exception as e:
+    print("Error at delete_assistChat():",e)
+  
+    return False
+  
+def remove_user_account(uid:str, assist_id:str) -> bool:
+  try:
+    cursor.execute( "DELETE FROM users WHERE uid=?, assist_id=? ",(uid,assist_id,))
+    cursor.execute( "DELETE FROM assistant WHERE assist_id= ?",(assist_id,))
+    cursor.execute( "DELETE FROM memories WHERE assist_id= ?",(assist_id,))
+    return True
+  
+  except Exception as e:
+    print("Error at remove_user_account():",e)
+    return False
+    
+    
+    
+    
+      
+
 # if __name__ =='__main__':
   
 #   data = {

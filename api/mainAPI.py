@@ -7,7 +7,7 @@ from datetime import datetime,timedelta,timezone
 from chatbot import *
 
 
-
+qa_hash = {}
 
 app = FastAPI()
 
@@ -245,27 +245,93 @@ async def updateProfile(uid:str, username:str = None, dob:int = None):
             'status' : True,
             'msg' : update['msg']
         }
-        
-# @app.post("/verify/")
-# async def verifyUser(loginInfo : loginInfo):
+   
+@app.put("/assistant/update/{assist_id}")
+async def updateAssistant(assist_id:str, aname:str = None, model:str = None, persona:str = None):
+   
+    result = update_assistant(assist_id, aname=aname, model=model, persona=persona) 
+    if result['status']:
+        return {
+            'status':True,
+            'msg':result['msg']
+        }
+    return {
+        'status' : False,
+        'msg' : result['msg']
+    }
     
-#     if loginInfo.username in usersData:
+@app.get("/users/verify/{uid}/{assist_id}")
+async def user_verify(uid:str, assist_id:str, password:str):
+    
+    og_pass = get_userPass(uid)
+    if verify_pass(password,og_pass):
+        qa : list = get_qa(uid)
+        if qa:
+            
+            qa_hash.update( {
+                uid : {
+                    'answer_hash' : hash_pass(qa[1]+password),
+                    'password': hash_pass(password),
+                    'exp' : int((datetime.now(timezone.utc) + timedelta(minutes=2)).timestamp())
+                }
+            } )
+            
+            print("qa:",qa_hash)
         
-#         hashedPass = usersData[loginInfo.username]['password']
-#         if verify_pass(loginInfo.password,hashedPass):
+        return {
+            'status' : True,
+            'question' : qa[0]
+        }
+          
+    return {
+        'status' : False,
+        'msg' : 'Failed to verify password.'
+        
+    }
+    
+@app.delete("/chats/delete/{assist_id}/{user_chat_id}/{memory_id}")
+async def delete_chat(assist_id:str, user_chat_id:int, memory_id:int):
+    
+    if delete_assistChat(assist_id, user_chat_id, memory_id):
+        return {
+            'status' : True,
+            'msg' : 'Deleted chat successfully.'
+        }
+    return {
+            'status' : False,
+            'msg' : 'Failed to delete chat.'
+        }
+    
+@app.delete("/profile/delete/{uid}/{assist_id}/{password}/{answer}")
+async def delete_account(uid:str, assist_id:str, password:str, answer:str):
+    
+    if qa_hash[uid]['exp'] > int(datetime.now().timestamp()):
+        
+        if verify_pass( password, qa_hash[uid]['password'] ):
+            
+            if verify_pass( answer+password, qa_hash[uid]['answer_hash'] ):
+                
+                if remove_user_account(uid, assist_id):
+                    return {
+                        'status' : True,
+                        'msg' : 'Deleted your account successfully.'
+                    }
                     
-#             return {
-#                 'status': True,
-#                 'msg' : 'user found',
-#                 'uid' : usersData[loginInfo.username]['uid']
-#             }
-            
-#         return {
-#             'status': False,
-#             'msg' : 'Wrong password'
-#         }
-            
-#     return {
-#         'status': False,
-#         'msg' : 'user not found'
-#     }
+            return {
+                'status' : False,
+                'msg' : 'Wrong answer.'
+            }
+        return {
+                'status' : False,
+                'msg' : 'Wrong password.'
+            }
+    return {
+        'status' : False,
+        'msg' : 'Expired.'
+    }
+        
+        
+    
+    # verify_pass(password,qa_hash[uid][])
+    
+    

@@ -4,9 +4,6 @@ import re,time,jwt
 from fe_models import fe_RegisterInfo
 from reqs import *
 
-# if 'auth' not in st.session_state: st.session_state.auth = None
-
-# unpack_token = jwt.decode(st.session_state.auth['token'],SECRET_KEY,algorithm)
 
 today_timestamp : int = int(datetime.now().timestamp())
 
@@ -20,7 +17,7 @@ def default_font() -> None:
         
 model_names : list[str] = [None,'gemma2:2b','llama3:7b']
 
-questions : list[str] = (
+questions : tuple[str] = (
     "What is the name of your first pet?",
     "What is the name of the town where you were born?",
     "Who was your childhood villian?",
@@ -161,3 +158,42 @@ def edit_profile() -> None:
         if res2['status']:
             st.session_state.profileData['dob'] = dob_timestamp
             st.rerun()
+
+@st.dialog("Answer the question:")
+def answer_question(uid:str, assist_id:str, password:str, q:int):
+    st.caption("Answer the following question correctly to delete you account")
+    st.info(f"Answer the question: :red-background[{questions[q]}]")
+    answer = st.text_input("Enter your answer:")
+    if st.button("submit"):
+        if answer:
+            delete_account(uid, assist_id, password, answer)
+                               
+def account_verification(uid:str, assist_id:str) -> bool:
+    
+    with st.container(border=True):
+        
+        pas,repas = st.columns(2)
+        password = pas.text_input("Enter your password:",type='password',value='Vasu@6969')
+        re_password = repas.text_input("Re-Enter your password:",type='password',value='Vasu@6969')
+        if st.button('verify'):
+            if password == re_password:
+                result = user_verfication(uid,assist_id,re_password)
+                if result['status']:
+                    answer_question(uid, assist_id, password, result['question'])
+       
+       
+@st.dialog("Are you sure?")             
+def delete_alert(assist_id:str, user_chat_id:int, memory_id:int) -> None:                    
+    
+    st.caption("do you want to delete this chat?")
+    blnk, cnfm = st.columns([3,1])
+    if cnfm.button("confirm",use_container_width=True):
+        dlt_status = delete_chat(assist_id, user_chat_id, memory_id)
+        if dlt_status['status']:
+            st.success(dlt_status['msg'])
+            time.sleep(1)
+            chats = getChat(st.session_state.auth['assist_id'])
+            if chats['status']:
+                st.session_state.chatbotData['messages'] = chats['chats']
+                st.rerun()
+        
