@@ -2,7 +2,7 @@ import streamlit as st
 import time,jwt,jwt.exceptions,requests
 from reqs import login_req,chatbot_req,gatherStartupData,getChat,getSettingsData,getProfileData
 import streamlit.components.v1 as components
-from forms import register_form,today_timestamp
+from forms import register_form,today_timestamp,delete_alert
 from api.creds import SECRET_KEY,algorithm
 
 st.set_page_config(
@@ -121,20 +121,29 @@ def main() -> None:
                     'persona' : settings['data']['persona']
                 })
                 
+        user_chat_id : int = ''       
                 
         for message in st.session_state.chatbotData['messages']:
         
                 if message['role'] == 'user':
                     with st.chat_message('user'):
                         st.write(f"**{st.session_state.profileData['username']} :** {message['chat']}")
+                        user_chat_id = message['memory_id']
+                        
                 if message['role'] == 'ai':
                     with st.container(border=True):
                         with st.chat_message('ai'):
                             st.markdown(f"**{st.session_state.settingsData['aname']} :** {message['chat']}")
                             blnk, bttn_col = st.columns([3,1])
-                            bttn_col.button('delete',
+                            if bttn_col.button('delete',
                                             key=message['memory_id'],
-                                            use_container_width=True)
+                                            use_container_width=True):
+                                delete_alert(st.session_state.auth['assist_id'],user_chat_id,message['memory_id'])
+                                
+                                
+                    
+                    
+                    
                     
         if prompt := st.chat_input('Sing a song..'):
             result = chatbot_req(st.session_state.auth['token'],"user",prompt)
@@ -150,7 +159,7 @@ if __name__ == "__main__":
         if 'models' not in st.session_state:
                 models = gatherStartupData()
                 st.session_state.models = models['models']
-                st.session_state.models = ["gemma2:2b"]
+                # st.session_state.models = ["gemma2:2b"]
                 
     
         main()
