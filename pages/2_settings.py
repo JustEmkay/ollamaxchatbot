@@ -1,31 +1,19 @@
 
 import streamlit as st 
 import time
-from forms import default_font,account_verification
+from forms import default_font,account_verification,redirect_to_login
 from reqs import updateAssistantAname,updateAssistantModel,updateAssistantPersona
 
 
 
-def redirect_to_login() -> None:
-    
-    st.caption(':red[please login] 🙏')
-    alert = st.empty()
-    alert.caption('Redirecting to Login page in 5s')
-    
-    for i in range(5):
-        time.sleep(1)
-        alert.caption(f'Redirecting to Login page in {5-i}s')
-        
-    st.switch_page('home.py')
-    
 
-
+    
 def options() -> None:
     
     
     alert = st.empty()
     
-    with st.expander('Model name',expanded=False):
+    with st.expander('Model name',expanded=True):
         with st.form('model name'):
             new_aname = st.text_input("Your model name:",placeholder='Enter new name for your model',
                                   value=st.session_state.settingsData['aname'])
@@ -39,7 +27,7 @@ def options() -> None:
     
     
     
-    with st.expander('Active Model',expanded=False):
+    with st.expander('Active Model',expanded=True):
         with st.form('Select model'):
             new_model = st.selectbox('Model list',st.session_state.models,
                          index=st.session_state.models.index(st.session_state.settingsData['model']))
@@ -51,7 +39,7 @@ def options() -> None:
                 else:
                     alert.error(res2['msg'])
 
-    with st.expander('Model Persona',expanded=False):
+    with st.expander('Model Persona',expanded=True):
         with st.form("persona"):
             new_persona = st.text_area("Assistant's persona:",
                                 placeholder="Enter how you want your assistant to act..",
@@ -65,26 +53,22 @@ def options() -> None:
                     alert.error(res3['msg'])
         
         
-    with st.expander('Delete Account',expanded=True):
-        if account_verification(st.session_state.auth['uid'], st.session_state.auth['assist_id']):
-            ...
+    with st.expander('Delete Account',expanded=False):
+        account_verification(st.session_state.auth['uid'],
+                             st.session_state.auth['assist_id'])
     
-
-
-
 def settings() -> None:
     st.header('Settings',anchor=False,divider='red')
     
-    if st.session_state.auth:    
+    if st.session_state.auth['status']:    
         
-        st.session_state.settingsData
+        # st.session_state.settingsData
         
         options()
     else:
         redirect_to_login()
         
         
-        
-
+    
 if __name__ == "__main__":
     settings()

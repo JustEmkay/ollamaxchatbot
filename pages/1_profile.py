@@ -1,7 +1,7 @@
 
 import streamlit as st
 from datetime import datetime
-from forms import timestamp_to_date,age_calc,edit_profile
+from forms import timestamp_to_date,age_calc,edit_profile,redirect_to_login
 
 
 def profile() -> None:
@@ -10,8 +10,7 @@ def profile() -> None:
     dob_obj=datetime.fromtimestamp(st.session_state.profileData['dob'])
     
     col1, col2 = st.columns([0.4,0.6])
-    # with col1.container(border=False,height=220):
-    col1.image("assets/images/female.png",width=100,
+    col1.image("assets/images/placeholder.jpg",width=100,
                 use_column_width=True)
     
     with col2.container(border=True,height=250):
@@ -36,5 +35,8 @@ def profile() -> None:
                 st.info("persona not defined")
     
 if __name__ == "__main__":
-    profile()
-
+    
+    if st.session_state.auth['status']:
+        profile()
+    else:
+        redirect_to_login()

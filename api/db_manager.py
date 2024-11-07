@@ -1,5 +1,5 @@
 import sqlite3,uuid
-from be_models import registerInfo,loginInfo
+from be_models import registerInfo
 from datetime import datetime
 
 
@@ -169,15 +169,15 @@ def get_userAccessData(username:str) -> dict:
       'msg' : 'Error accessing data.'
     }
   
-def get_userAssist_data(assist_id:str) -> dict:
+# def get_userAssist_data(assist_id:str) -> dict:
   
-  cursor.execute(" SELECT persona,model FROM assistants WHERE assist_id = ? ",(assist_id,))
-  result = cursor.fetchone()  
+#   cursor.execute(" SELECT persona,model FROM assistants WHERE assist_id = ? ",(assist_id,))
+#   result = cursor.fetchone()  
   
-  return {
-    'model' : result[1],
-    'persona' : result[0]
-  }
+#   return {
+#     'model' : result[1],
+#     'persona' : result[0]
+#   }
   
 def save_menmory(assist_id,user:list,ai:list) -> dict:
   
@@ -227,17 +227,32 @@ def get_Settings(assist_id:str) -> dict:
     'persona' : result[2]
   }
   
-def get_userProfile(uid:str) -> dict:
+def get_userProfile(uid:str, option:str = None) -> dict:
   
   cursor.execute( "SELECT username,dob,created_date FROM users WHERE uid=?",
                  (uid,))
   result = cursor.fetchone()
+  
   print("result:",result)
-  return {
-    'username':result[0],
-    'dob' : result[1],
-    'created_date' : result[2] 
-  }
+  
+  if option == 'username':
+    return {
+      'username':result[0],
+    }
+  elif option == 'dob':
+    return {
+      'dob' : result[1]
+    }
+  elif option == 'created_date':
+    return {
+      'created_date' : result[2] 
+    }
+  elif not option:
+    return {
+      'username':result[0],
+      'dob' : result[1],
+      'created_date' : result[2] 
+    }
 
 def update_userProfile(uid:str, **updateCols) -> dict:
 
@@ -319,8 +334,8 @@ def delete_assistChat(assist_id:str, user_chat_id:int, memory_id:int) -> bool:
   
 def remove_user_account(uid:str, assist_id:str) -> bool:
   try:
-    cursor.execute( "DELETE FROM users WHERE uid=?, assist_id=? ",(uid,assist_id,))
-    cursor.execute( "DELETE FROM assistant WHERE assist_id= ?",(assist_id,))
+    cursor.execute( "DELETE FROM users WHERE uid=? AND assist_id=? ",(uid,assist_id,))
+    cursor.execute( "DELETE FROM assistants WHERE assist_id= ?",(assist_id,))
     cursor.execute( "DELETE FROM memories WHERE assist_id= ?",(assist_id,))
     return True
   

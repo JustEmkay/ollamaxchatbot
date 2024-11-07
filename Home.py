@@ -2,7 +2,7 @@ import streamlit as st
 import time,jwt,jwt.exceptions,requests
 from reqs import login_req,chatbot_req,gatherStartupData,getChat,getSettingsData,getProfileData
 import streamlit.components.v1 as components
-from forms import register_form,today_timestamp,delete_alert
+from forms import register_form,today_timestamp,delete_alert,alert,logout_sessions
 from api.creds import SECRET_KEY,algorithm
 
 st.set_page_config(
@@ -15,9 +15,13 @@ st.set_page_config(
 
 if 'auth' not in st.session_state: 
     st.session_state.auth = {
+        'status': False,
         'token':None,
         'unpackedToken' : False
-    }
+    }    
+    
+if 'account_del_alert' not in st.session_state:
+    st.session_state.account_del_alert = False
 
 if 'chatbotData' not in st.session_state: 
     st.session_state.chatbotData = {
@@ -25,7 +29,7 @@ if 'chatbotData' not in st.session_state:
     'messages' : [
         {
             'memory_id' : '0',
-            'role' : 'juhi',
+            'role' : 'ai',
             'chat' : 'How can i help you ?',
             'created' : today_timestamp
         }
@@ -48,16 +52,28 @@ if 'settingsData' not in st.session_state:
         'persona' : None
     }
 
-
+def stream_gen(text:str):
+    
+    """ 
+    text stream generator.
+    """
+    
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.008)
+        
+    
 
 def main() -> None:
     
-    st.title("Convoo",anchor=False,
-              help='chat bot powered by ollama 🦙',
-              )
+    st.title("Convoo",anchor=False)
+    st.caption('🚀 chatbot powered by ollama 🦙')
     
-    if not st.session_state.auth['token']:
+    
+    if not st.session_state.auth['status']:
         
+        if st.session_state.account_del_alert:
+            alert()
                 
         with st.container(border=True):
             username = st.text_input("enter username:",value='emkay')
@@ -81,7 +97,7 @@ def main() -> None:
                             st.error(result['msg'],icon='⚠')
                             
                             
-    elif st.session_state.auth:
+    elif st.session_state.auth['status']:
         
         if not st.session_state.auth['unpackedToken']: 
             unpack_token = jwt.decode(st.session_state.auth['token'],SECRET_KEY,algorithm)
@@ -123,7 +139,7 @@ def main() -> None:
                 
         user_chat_id : int = ''       
                 
-        for message in st.session_state.chatbotData['messages']:
+        for indx,message in enumerate(st.session_state.chatbotData['messages'],start=1):
         
                 if message['role'] == 'user':
                     with st.chat_message('user'):
@@ -133,20 +149,22 @@ def main() -> None:
                 if message['role'] == 'ai':
                     with st.container(border=True):
                         with st.chat_message('ai'):
-                            st.markdown(f"**{st.session_state.settingsData['aname']} :** {message['chat']}")
+                            st.markdown(f"**{st.session_state.settingsData['aname']}**")
+                            
+                            if indx == len(st.session_state.chatbotData['messages']):
+                                st.write_stream(stream_gen(message['chat']))
+                            else:
+                                st.write(message['chat'])
                             blnk, bttn_col = st.columns([3,1])
                             if bttn_col.button('delete',
                                             key=message['memory_id'],
                                             use_container_width=True):
                                 delete_alert(st.session_state.auth['assist_id'],user_chat_id,message['memory_id'])
-                                
-                                
-                    
-                    
-                    
                     
         if prompt := st.chat_input('Sing a song..'):
-            result = chatbot_req(st.session_state.auth['token'],"user",prompt)
+            result = chatbot_req(uid=st.session_state.auth['uid'],
+                                 assist_id=st.session_state.auth['assist_id'],
+                                 prompt=prompt,role="user")
             if result:
                 if result['status']:
                     st.session_state.chatbotData['messages'] = result['memories']
@@ -159,13 +177,11 @@ if __name__ == "__main__":
         if 'models' not in st.session_state:
                 models = gatherStartupData()
                 st.session_state.models = models['models']
-                # st.session_state.models = ["gemma2:2b"]
                 
-    
         main()
     
     except jwt.exceptions.ExpiredSignatureError:
-            st.session_state.auth = None
+            logout_sessions()
             st.toast(':red-background[Your token expired!]',icon='❌')
             time.sleep(2)
             st.rerun()

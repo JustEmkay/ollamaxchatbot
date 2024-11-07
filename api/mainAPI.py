@@ -161,36 +161,32 @@ async def registerUser(regData:registerInfo):
             'msg' : msg
         }
             
-@app.post("/chatbot/{token}")
-async def chatbot_req(token:str, userInput:dict):
+@app.post("/chatbot/{uid}/{assist_id}")
+async def chatbot_req(uid:str, assist_id:str, role:str, prompt:str):
     
-    result = authenticate_token(token)
-    if result['status']:
+    
+    assist_data = get_Settings(assist_id)
+    username = get_userProfile(uid,'username')
+    response = chatbot(username, assist_data['aname'], assist_data['model'],
+                       assist_data['persona'], role, prompt)
+    
+    if response['status']:
         
-        assist_data = get_userAssist_data(result['assist_id'])
-        
-        response = chatbot(assist_data['model'],assist_data['persona'],
-                           userInput['role'],userInput['prompt'])
-        
-        if response['status']:
-            
-            user = [result['assist_id'],userInput['role'],userInput['prompt']]
-            ai = [result['assist_id'],"ai",response['response']]
+        user = [assist_id, role, prompt]
+        ai = [assist_id, "ai", response['response']]
 
-            history = save_menmory(result['assist_id'],user,ai)
-            if history:
-                return {
-                    
-                    'status' : True,
-                    'memories' : history
-                    }
-        else:
+        history = save_menmory(assist_id,user,ai)
+        if history:
             return {
-                'status' : False,
-                'msg': "Error occured."
-            }
-    
-    return result
+                
+                'status' : True,
+                'memories' : history
+                }
+    else:
+        return {
+            'status' : False,
+            'msg': "Error occured."
+        }    
         
 @app.get("/chats/{assist_id}")
 async def getChats(assist_id:str):
@@ -219,7 +215,7 @@ async def getSettings(assist_id:str):
     
 @app.get("/profile/{uid}")
 async def getProfile(uid:str):
-    result = get_userProfile(uid)
+    result = get_userProfile(uid,None)
     if result:
         return {
             'status' : True,

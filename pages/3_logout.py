@@ -1,6 +1,6 @@
 import streamlit as st 
 import time
-
+from forms import logout_sessions
 
 def redirect_to_login() -> None:
     
@@ -20,19 +20,9 @@ def logout() -> None:
     
     st.session_state
     
-    if st.session_state.auth:    
+    if st.session_state.auth['status']:    
         if st.button('logout'):
-            st.session_state.update(
-                    {
-                        'auth' : None,
-                        "messages" : [
-                                            {
-                                            'role':'ai' ,
-                                            'response':'How can i help you today!' 
-                                        }
-                                    ]
-                    }
-                )
+            logout_sessions()
             st.toast(":red[loging out...]")
             time.sleep(2)
             st.rerun()

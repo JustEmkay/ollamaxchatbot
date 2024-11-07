@@ -20,12 +20,8 @@ def llm_status() -> bool:
             'msg' : 'models are dead',
         }
      
-def chatbot(model_name:str,persona:str,role:str,prompt:str):
-    
-    # print("model_name:",model_name)
-    # print("persona:",persona)
-    # print("role:",role)
-    # print("prompt:",prompt)
+def chatbot(username:str, aname:str, model_name:str, persona:str,
+            role:str, prompt:str):
     
     try:
         
@@ -34,13 +30,15 @@ def chatbot(model_name:str,persona:str,role:str,prompt:str):
         if persona: 
         
             content = f"""
-                Act as {persona}
+                User name : {username}
+                assistant name : {aname}
+                Act as : {persona}
                 
                 prompt : {prompt} 
             
             """
         
-        print("chat-bot content:",content)
+        # print("chat-bot content:",content)
 
         res = ollama.chat(model=model_name, 
                         messages=[
@@ -49,7 +47,7 @@ def chatbot(model_name:str,persona:str,role:str,prompt:str):
                                 'content': content
                             }
                         ])
-        # print(f"response : {res['message']['content']}")
+        
         return {
             'status': True,
             "response" : res['message']['content']

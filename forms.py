@@ -7,6 +7,18 @@ from reqs import *
 
 today_timestamp : int = int(datetime.now().timestamp())
 
+def redirect_to_login() -> None:
+    
+    st.caption(':red[please login] 🙏')
+    alert = st.empty()
+    alert.caption('Redirecting to Login page in 5s')
+    
+    for i in range(5):
+        time.sleep(1)
+        alert.caption(f'Redirecting to Login page in {5-i}s')
+        
+    st.switch_page('home.py')
+
 def timestamp_to_datetimedate(timestamp:int) -> datetime.date:
     
     return datetime.fromtimestamp(timestamp).date()
@@ -44,7 +56,13 @@ def timestamp_to_date(stamp : int) -> str:
     tdate = datetime.fromtimestamp(stamp).strftime("%B %d, %Y")
     return tdate
 
-@st.dialog("user Registration",width='large')
+@st.dialog('Alert')
+def alert():
+    st.success(f"Your account deleted successfully.  \
+               Thank you very much for using Convo",icon='😢')
+    st.session_state.account_del_alert = False
+
+@st.dialog("User Registration ✍",width='large')
 def register_form()->None:
     
     placeholder = st.empty()
@@ -54,7 +72,7 @@ def register_form()->None:
         bttn_disable : list = [True,':red-background[fill all inputs]']    
         
         with st.container(border=True):
-            username = st.text_input("Enter your username:",value='emkay')
+            username = st.text_input("Enter your username:")
             uname_alert = st.empty()
             if username:
                 if not validate_username(username):
@@ -67,25 +85,25 @@ def register_form()->None:
         
         with st.container(border=True):
             aname_col, model_col = st.columns(2)    
-            aname = aname_col.text_input("Enter your assistant name:",value='juhi')
+            aname = aname_col.text_input("Enter your assistant name:")
             model = model_col.selectbox("Select model:",st.session_state.models)
             model_alert = st.empty()
             if aname:
                     if not validate_username(aname):
                         model_alert.warning("Not valid assistant name",icon='🤦‍♂️')
-            persona = st.text_area("Cretae assistant personality:")
+            persona = st.text_area("Create assistant personality:")
                         
                         
         with st.container(border=True):
             qes,ans = st.columns([0.7,0.3])
             question : int = questions.index(qes.selectbox("select a question:",questions))
-            answer = ans.text_input("Enter your answer:",value='doggy')
+            answer = ans.text_input("Enter your answer:")
             qa_alert = st.empty()
             qa = [question, answer]
             
             pas,repas = st.columns(2)
-            password = pas.text_input("Create new password:",type='password',value='Vasu@6969')
-            re_password = repas.text_input("Re-Enter password:",type='password',value='Vasu@6969')
+            password = pas.text_input("Create new password:",type='password')
+            re_password = repas.text_input("Re-Enter password:",type='password')
             pass_alert = st.empty()
         
         if password and re_password:
@@ -99,7 +117,7 @@ def register_form()->None:
                         bttn_disable = [False,':green-background[Good to go✅]']
                     
                                     
-        if st.button('cerate account',use_container_width=True,type='primary',
+        if st.button('create account',use_container_width=True,type='primary',
                     disabled=bttn_disable[0],help=bttn_disable[1]):
             try:
                 reg = fe_RegisterInfo(username=username,dob=dob_timestamp,
@@ -166,22 +184,28 @@ def answer_question(uid:str, assist_id:str, password:str, q:int):
     answer = st.text_input("Enter your answer:")
     if st.button("submit"):
         if answer:
-            delete_account(uid, assist_id, password, answer)
-                               
+            response = delete_account(uid, assist_id, password, answer)
+            if response['status']:
+                print("account deleted")
+                st.session_state.account_del_alert = True
+                st.rerun()
+            
+            else:
+                st.warning(response['msg'],icon='⚠')
+                                         
 def account_verification(uid:str, assist_id:str) -> bool:
     
     with st.container(border=True):
         
         pas,repas = st.columns(2)
-        password = pas.text_input("Enter your password:",type='password',value='Vasu@6969')
-        re_password = repas.text_input("Re-Enter your password:",type='password',value='Vasu@6969')
+        password = pas.text_input("Enter your password:",type='password')
+        re_password = repas.text_input("Re-Enter your password:",type='password')
         if st.button('verify'):
             if password == re_password:
                 result = user_verfication(uid,assist_id,re_password)
                 if result['status']:
                     answer_question(uid, assist_id, password, result['question'])
-       
-       
+            
 @st.dialog("Are you sure?")             
 def delete_alert(assist_id:str, user_chat_id:int, memory_id:int) -> None:                    
     
@@ -197,3 +221,36 @@ def delete_alert(assist_id:str, user_chat_id:int, memory_id:int) -> None:
                 st.session_state.chatbotData['messages'] = chats['chats']
                 st.rerun()
         
+def logout_sessions() -> None:
+    
+    st.session_state.auth = {
+    'status': False,
+    'token': None,
+    'unpackedToken' : False
+    }
+
+    st.session_state.chatbotData = {
+        'getChat' : False,
+        'messages' : [
+            {
+                'memory_id' : '0',
+                'role' : 'ai',
+                'chat' : 'How can i help you ?',
+                'created' : today_timestamp
+            }
+        ]
+    }
+
+    st.session_state.profileData = {
+        'getProfile' : False,
+        'username' : None,
+        'dob' : None,
+        'created_date' : None
+    }
+    
+    st.session_state.settingsData = {
+        'getSettingsData' : False,
+        'aname': None,
+        'model' : None,
+        'persona' : None
+    }
