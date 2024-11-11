@@ -1,14 +1,30 @@
 import sqlite3,uuid
+from pathlib import Path
 from be_models import registerInfo
 from datetime import datetime
 
-
-conn = sqlite3.connect("../database/data.db",check_same_thread=False)
+tables : tuple[str] = ("users", "assistants", "memories")
+PATH = "../database/data.db"
+conn = sqlite3.connect(PATH, check_same_thread=False)
 conn.isolation_level = None
 cursor = conn.cursor()
 
 created_date = int(datetime.now().timestamp())
 
+
+def check_db() -> str:
+  file = Path(PATH)
+  if file.is_file():
+    
+    cursor.execute( " SELECT name FROM sqlite_master WHERE type='table' " )
+    result = [ _[0] for _ in cursor.fetchall() ]
+    not_in_table : tuple[str] = [ _ for _ in tables if _ not in result ]
+    if not not_in_table:
+      return "DB found."  
+  print("DB not found,creating new db")
+  ct = create_Tables()
+  if ct['status']:
+    return "Task completed."
 
 def create_Tables() -> dict:
   """ create tables if not found.
@@ -168,16 +184,6 @@ def get_userAccessData(username:str) -> dict:
       'status':False,
       'msg' : 'Error accessing data.'
     }
-  
-# def get_userAssist_data(assist_id:str) -> dict:
-  
-#   cursor.execute(" SELECT persona,model FROM assistants WHERE assist_id = ? ",(assist_id,))
-#   result = cursor.fetchone()  
-  
-#   return {
-#     'model' : result[1],
-#     'persona' : result[0]
-#   }
   
 def save_menmory(assist_id,user:list,ai:list) -> dict:
   
@@ -349,6 +355,7 @@ def remove_user_account(uid:str, assist_id:str) -> bool:
       
 
 # if __name__ =='__main__':
+#   print(check_db())
   
 #   data = {
 #     'username': 'emkay',
